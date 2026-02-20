@@ -23,5 +23,8 @@
     <ClInclude Include="LockFreeQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FeedHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

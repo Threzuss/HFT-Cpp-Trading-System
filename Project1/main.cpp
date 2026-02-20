@@ -1,39 +1,35 @@
 #include <iostream>
-#include "LockFreeQueue.h" 
-
-
-struct MarketOrder {
-    long long orderId;
-    double price;
-    int quantity;
-};
+#include <chrono>
+#include "LockFreeQueue.h"
+#include "FeedHandler.h"
 
 int main() {
-    
-    std::cout << "[System] Initializing HFT Order Book..." << std::endl;
-    LockFreeQueue<MarketOrder, 1024> orderBook;
+	std::cout << "=== HFT System Booting ===\n";
 
-    MarketOrder incomingOrder = { 999, 150.25, 100 };
+	LockFreeQueue<MarketOrder, 1024> orderBook;
+	FeedHandler feedHandler(orderBook);
 
-    if (orderBook.push(incomingOrder)) {
-        std::cout << "[Producer] Order #999 Pushed to Ring Buffer." << std::endl;
-    }
-    else {
-        std::cout << "[Producer] Buffer Full! Order Dropped." << std::endl;
-    }
+	const int totalOrders = 1'000'000;
+	std::cout << "[System] Commencing 1-Million Order Stress Test..\n";
 
-    MarketOrder processedOrder;
+	auto start =
+		std::chrono::high_resolution_clock::now();
+	feedHandler.runDataIngestion(totalOrders);
 
-    if (orderBook.pop(processedOrder)) {
-        std::cout << "[Consumer] Order Popped! Processing Price: " << processedOrder.price << std::endl;
-    }
-    else {
-        std::cout << "[Consumer] Buffer Empty. Waiting..." << std::endl;
-    }
+	auto end =
+		std::chrono::high_resolution_clock::now();
 
-    if (processedOrder.orderId == 999) {
-        std::cout << "[Test Passed] Data integrity verified." << std::endl;
-    }
+	auto duration_ms =
+		std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	auto duration_us =
+		std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+	
+	std::cout << "\n=== PERFORMANCE REPORT ===\n";
+	std::cout << "Total Time: " << duration_ms.count() << " milliseconds (" << duration_us.count() << " microseconds)\n";
 
-    return 0;
+	double ordersPerMicro = 
+		(double)totalOrders / duration_us.count();
+	std::cout << "Throughput: " << ordersPerMicro << " orders per microsecond\n";
+	
+	return 0;
 }
